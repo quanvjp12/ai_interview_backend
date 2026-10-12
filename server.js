@@ -2,14 +2,16 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const OpenAI = require('openai');
+const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
 });
+
+const MODEL = 'gemini-2.5-flash';
 
 app.use(cors());
 app.use(express.json());
@@ -25,9 +27,9 @@ app.post('/api/interview/start', async function(req, res) {
         language
     });
     try {
-        const response = await client.responses.create({
-            model: 'gpt-5.6-luna',
-            input: `
+        const response = await ai.models.generateContent({
+            model: MODEL,
+            contents: `
                 You are an AI technical interviewer.
                 Create the first interview question for a ${level} level ${position} developer.
                 Interview language: ${language}.
@@ -40,7 +42,7 @@ app.post('/api/interview/start', async function(req, res) {
                 - Return only the interview question.
             `
         });
-        const question = response.output_text;
+        const question = response.text;
         console.log('AI question:', question);
         res.json({
             question: question
@@ -76,9 +78,9 @@ app.post('/api/interview/answer', async function(req, res) {
     });
     try {
         if (Number(currentQuestion) >= Number(questions)) {
-            const response = await client.responses.create({
-                model: 'gpt-5.6-luna',
-                input: `
+            const response = await ai.models.generateContent({
+                model: MODEL,
+                contents: `
                     You are an AI technical interviewer.
                     Position: ${position}
                     Candidate level: ${level}
@@ -97,42 +99,37 @@ app.post('/api/interview/answer', async function(req, res) {
                     - Use the requested interview language.
                     - Be appropriate for the candidate's level.
                 `,
-                text: {
-                    format: {
-                        type: 'json_schema',
-                        name: 'interview_result',
-                        strict: true,
-                        schema: {
-                            type: 'object',
-                            properties: {
-                                score: { type: 'number' },
-                                overall: { type: 'string' },
-                                strengths: { type: 'array', items: { type: 'string' }},
-                                improvements: { type: 'array', items: { type: 'string' }},
-                                recommendations: { type: 'array', items: { type: 'string' }},
-                            },
-                            required: [
-                                'score',
-                                'overall',
-                                'strengths',
-                                'improvements',
-                                'recommendations'
-                            ],
-                            additionalProperties: false
-                        }
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: 'object',
+                        properties: {
+                            score: { type: 'number' },
+                            overall: { type: 'string' },
+                            strengths: { type: 'array', items: { type: 'string' } },
+                            improvements: { type: 'array', items: { type: 'string' } },
+                            recommendations: { type: 'array', items: { type: 'string' } }
+                        },
+                        required: [
+                            'score',
+                            'overall',
+                            'strengths',
+                            'improvements',
+                            'recommendations'
+                        ]
                     }
                 }
             });
-            const result = JSON.parse(response.output_text);
+            const result = JSON.parse(response.text);
             return res.json({
                 finished: true,
                 result: result
             });
         }
 
-        const response = await client.responses.create({
-            model: 'gpt-5.6-luna',
-            input: `
+        const response = await ai.models.generateContent({
+            model: MODEL,
+            contents: `
                 You are an AI technical interviewer.
                 Position: ${position}
                 Candidate level: ${level}
@@ -155,7 +152,7 @@ app.post('/api/interview/answer', async function(req, res) {
                 - Return only the next interview question.
             `
         });
-        const nextQuestion = response.output_text;
+        const nextQuestion = response.text;
         console.log('Next AI question:', nextQuestion);
         res.json({
             finished: false,

@@ -135,21 +135,22 @@ app.post('/api/interview/answer', async function(req, res) {
                 Candidate level: ${level}
                 Interview language: ${language}
                 Total questions: ${questions}
-                Current question: ${currentQuestion}
+                Current question index: ${currentQuestion}
                 Previous interview history: ${JSON.stringify(history)}
                 Current question: ${question}
                 Candidate's answer: ${answer}
-                Evaluate the candidate's answer.
-                Then create the next interview question.
 
-                Rules:
-                - Evaluate the answer briefly.
-                - Ask only one next question.
-                - The next question must be appropriate for the candidate's level.
-                - The next question should consider the candidate's previous answers.
-                - Do not reveal the correct answer.
+                Task:
+                Create only the next interview question. You may adjust the question topic or difficulty based on the candidate's previous responses.
+
+                Strict Rules:
+                - Output ONLY the interview question text.
+                - Do NOT include any evaluation, feedback, commentary, praise, or critique of the candidate's answer.
+                - Do NOT include any introductory or transitional phrases (e.g. do NOT write "Thank you...", "Good attempt...", "Moving to the next question...", "Question 2:").
+                - Do NOT reveal or explain the correct answer.
+                - Ask only one question.
+                - Make the question appropriate for the candidate's level.
                 - Use the requested interview language.
-                - Return only the next interview question.
             `
         });
         const nextQuestion = response.text;

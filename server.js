@@ -1,3 +1,10 @@
+// const dotenv = require("dotenv");
+// const path = require("path");
+
+// dotenv.config({
+//   path: path.resolve(__dirname, "../.env"),
+// });
+
 require('dotenv').config();
 
 const express = require('express');
@@ -16,6 +23,10 @@ const MODEL = 'gemini-3.8-flash';
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
+
+app.get('/api/health', function(req, res) {
+    res.status(200).json({ status: 'ok', message: 'Server is awake' });
+});
 
 app.post('/api/interview/start', async function(req, res) {
     const { position, level, questions, language } = req.body;
